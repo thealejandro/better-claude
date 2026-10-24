@@ -110,7 +110,9 @@ pad, gap = 6, 18
 width, height = image.width() + pad * 2, image.height() + pad * 2
 root.configure(background='#202020')
 tk.Label(root, image=image, borderwidth=0, highlightthickness=0, background='#202020').pack(padx=pad, pady=pad)
-mouse_x, mouse_y = root.winfo_pointerxy()
+# Under XWayland the pointer over a Wayland window is not X's to tell: the compositor says where it is.
+pointer = os.environ.get('IMAGE_PREVIEW_POINTER', '').split(',')
+mouse_x, mouse_y = (int(pointer[0]), int(pointer[1])) if len(pointer) == 2 else root.winfo_pointerxy()
 # Above the pointer and to its right; under it, or to its left, where there is no room: never over
 # the pointer, which stays on the terminal.
 x, y = mouse_x + gap, mouse_y - gap - height

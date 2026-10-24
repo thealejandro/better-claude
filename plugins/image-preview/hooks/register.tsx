@@ -337,7 +337,18 @@ async function windowCommand ($: Engine, id: number): Promise<Command | undefine
     await makeFolder($, cache)
     if (!(await convert($, name => shrink(name, file, out, 'png', `${WINDOW_SIZE}>`)))) return undefined
   }
-  return { argv: ['python3', '-c', LINUX], env: { ...env, IMAGE_PREVIEW_FILE: out } }
+  return { argv: ['python3', '-c', LINUX], env: { ...env, IMAGE_PREVIEW_FILE: out, ...(await hyprlandPointer($)) } }
+}
+
+/**
+ * Under Hyprland, where the pointer is, as the compositor says (`hyprctl cursorpos`, `x, y`): Tk
+ * runs under XWayland, which cannot tell where the pointer is over a Wayland terminal, as foot is.
+ */
+async function hyprlandPointer ($: Engine) {
+  if ((await $.env.get('HYPRLAND_INSTANCE_SIGNATURE')) === undefined) return undefined
+  const said = (await $.process.run(['hyprctl', 'cursorpos']).catch(() => undefined))?.stdout ?? ''
+  const at = /^\s*(-?\d+)(?:\.\d+)?\s*,\s*(-?\d+)(?:\.\d+)?\s*$/.exec(said)
+  return at ? { IMAGE_PREVIEW_POINTER: `${at[1]},${at[2]}` } : undefined
 }
 
 /**
@@ -625,6 +636,7 @@ export const register: Register = (on, options) => {
       else if (system === 'linux' && (await $.env.get('DISPLAY'))) {
         const tk = await $.process.run(['python3', '-c', 'import tkinter']).catch(() => undefined)
         if (tk?.exitCode === 0) windowing = 'linux'
+        else $.ui.log('image-preview: no window (python3 has no tkinter); the terminal draws the cards', { to: 'debug' })
       }
     }
     // A reload starts with an empty cache: read again what is in the box.

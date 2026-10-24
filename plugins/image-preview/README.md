@@ -26,13 +26,13 @@ The picture shows as it is, sharp: a screenshot of text reads as it was. It is s
 | macOS | An AppKit panel with the HUD material, round corners and a shadow, run by `osascript` (JavaScript for Automation) | Nothing to install |
 | Windows | A Windows Forms tool window, run by PowerShell | Nothing to install |
 | WSL | The same Windows Forms window, run by `powershell.exe` from WSL, by the Windows pointer | Nothing to install |
-| Linux | A Tk tooltip window on X11, the picture shrunk to a PNG | Python's Tk (`python3-tk` on Debian and Ubuntu, `python3-tkinter` on Fedora) and ImageMagick |
+| Linux | A Tk tooltip window on X11, the picture shrunk to a PNG | Python's Tk (`python3-tk` on Debian and Ubuntu, `python3-tkinter` on Fedora, `tk` on Arch) and ImageMagick |
 
 Turn it off with the **Preview in a window** option (`/config`) to keep the preview in the terminal. Over SSH the window would open on the other machine, so there the terminal draws it. Where the window's program cannot show one, the terminal draws the previews for the rest of the session.
 
 ## In the terminal
 
-In Ghostty and kitty the terminal draws the picture itself, through the kitty graphics protocol. Elsewhere, without the window, it is drawn in colored block elements: each cell is sampled at eight by eight points, in linear light, and drawn with the half, eighth or quarter block (`▀ ▂ ▎ ▚ …`) that splits those points best, in their two colors, in any terminal with true color. Cells are coarse: a screenshot of text shows its layout, not text you can read.
+In Ghostty and kitty the terminal draws the picture itself, through the kitty graphics protocol. Terminals that speak only sixel, as foot does, cannot: Claude Code does not draw pictures with sixel, and a mod cannot write it to the terminal. Elsewhere, without the window, it is drawn in colored block elements: each cell is sampled at eight by eight points, in linear light, and drawn with the half, eighth or quarter block (`▀ ▂ ▎ ▚ …`) that splits those points best, in their two colors, in any terminal with true color. Cells are coarse: a screenshot of text shows its layout, not text you can read.
 
 ```text
   12
@@ -61,7 +61,7 @@ Warp speaks the kitty graphics protocol, but not the Unicode placeholders Claude
 - In a sent prompt, the `[Image #N]` takes the pointer and the click in the prompt's first line only, before it would wrap: past that, the mod cannot tell where the line puts it. The `⎿ [Image #N]` rows show the preview but take no click, which Claude Code keeps for itself.
 - A window stays two minutes at most, even with the pointer still on its `[Image #N]`: move off and back on to open it again.
 - A click opens the image with `open -a Preview` on macOS, `explorer` on Windows, `explorer.exe` under WSL (the path turned into its Windows form by `wslpath -w`), `xdg-open` elsewhere.
-- On Linux the window needs X11 (or XWayland): under Wayland alone there is none, and the terminal draws the card. Under XWayland the window may not stand by the pointer when the terminal is a Wayland window.
+- On Linux the window needs X11 (or XWayland): under Wayland alone there is none, and the terminal draws the card. Under XWayland the window may not stand by the pointer when the terminal is a Wayland window (as foot is), except under Hyprland, where the mod asks `hyprctl cursorpos` where the pointer is. Without Tk the debug log (`claude --debug`) says so.
 - On Windows the first window compiles a small helper into the temp folder, which takes a second. The Windows window and converter have been written and checked (the scripts parse, the commands are tested) and have been run on Windows from WSL.
 - Under WSL (`WSL_DISTRO_NAME` is set) the session is Linux but the desktop is Windows', so the window, the converter and the viewer are Windows': a WSLg window could not tell where the pointer is over a Windows terminal.
 - Hovering needs the terminal to report mouse motion. A terminal multiplexer between Claude Code and the terminal must pass it on: in testing, herdr 0.9.1 did not, and no preview opened.

@@ -65,7 +65,7 @@ function world (
   on('process.run', ($, e) => {
     runs.push([...e.argv])
     runEnvs.push({ ...e.init?.env })
-    const stdout = e.argv[0] === 'id' ? '501\n' : e.argv[0] === 'uname' ? `${system}\n` : e.argv[0] === 'wslpath' ? `${windowsPath(e.argv[2]!)}\n` : ''
+    const stdout = e.argv[0] === 'id' ? '501\n' : e.argv[0] === 'uname' ? `${system}\n` : e.argv[0] === 'wslpath' ? `${windowsPath(e.argv[2]!)}\n` : e.argv[0] === 'hyprctl' ? '1210, 640\n' : ''
     return { value: { exitCode: missing.includes(e.argv[0]!) ? 127 : 0, stdout, stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
   })
   on('fs.exists', ($, e) => ({ value: posix(e.path) === `${temp}/-project-app/${session.id}/images` && session.id === 's-1' }))
@@ -564,6 +564,36 @@ test('on Linux with a display and Tk, the window is Tk\'s, showing the picture s
   expect(w.runs).toContainEqual(['magick', `${FOLDER}/images/1.png`, '-resize', '800x800>', `PNG:${FOLDER}/image-preview/1.window.png`])
   expect(w.windows[0]!.argv.slice(0, 2)).toEqual(['python3', '-c'])
   expect(w.windows[0]!.env.IMAGE_PREVIEW_FILE).toBe(`${FOLDER}/image-preview/1.window.png`)
+})
+
+test('under Hyprland the Tk window stands by the pointer the compositor reports, which XWayland cannot tell over foot', async ($, on) => {
+  const w = world(on, { draft: '[Image #1]', system: 'Linux', env: { TERM: 'xterm-256color', TERM_PROGRAM: '', DISPLAY: ':0', WAYLAND_DISPLAY: 'wayland-1', HYPRLAND_INSTANCE_SIGNATURE: 'abc' } })
+  await startSession($)
+  await w.clock.settle()
+  await point(await band($), 'chip:1')
+  await w.clock.advance(100)
+  expect(w.runs).toContainEqual(['hyprctl', 'cursorpos'])
+  expect(w.windows[0]!.env.IMAGE_PREVIEW_POINTER).toBe('1210,640')
+})
+
+test('outside Hyprland Tk finds the pointer itself', async ($, on) => {
+  const w = world(on, { draft: '[Image #1]', system: 'Linux', env: { DISPLAY: ':0' } })
+  await startSession($)
+  await w.clock.settle()
+  await point(await band($), 'chip:1')
+  await w.clock.advance(100)
+  expect(w.runs.some(argv => argv[0] === 'hyprctl')).toBe(false)
+  expect(w.windows[0]!.env.IMAGE_PREVIEW_POINTER).toBeUndefined()
+})
+
+test('on Linux without tkinter, as foot under Hyprland with no Tk installed, the terminal draws the card', async ($, on) => {
+  const w = world(on, { draft: '[Image #1]', system: 'Linux', env: { DISPLAY: ':0', HYPRLAND_INSTANCE_SIGNATURE: 'abc' }, missing: ['python3'] })
+  await startSession($)
+  await w.clock.settle()
+  const ui = await band($)
+  await point(ui, 'chip:1')
+  expect(w.windows).toHaveLength(0)
+  expect(await ui.find({ key: 'image-1' })).toMatchObject({ type: 'Raster' })
 })
 
 test('on Linux with no display the terminal draws the card', async ($, on) => {
