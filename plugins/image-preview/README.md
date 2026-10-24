@@ -15,6 +15,16 @@ The preview shows only while the pointer is on the `[Image #N]` that opened it. 
 
 Hovering needs the mouse, so it needs Claude Code's fullscreen interface (`"tui": "fullscreen"` in your settings, or `/config`).
 
+## What it needs
+
+The preview is sharp in one of two places, and coarse everywhere else:
+
+- **Drawn by the terminal**, in kitty and Ghostty (the kitty graphics protocol). It needs ImageMagick on Linux (macOS has `sips`).
+- **In a window by the pointer**, in any other terminal on the same machine. macOS and Windows need nothing; **Linux needs X11 or XWayland, Python's Tk and ImageMagick** (see the table below).
+- **Otherwise, colored blocks** in the terminal: low resolution, enough to tell the picture's layout, not to read its text. That is what you get on Linux without Tk, over SSH, and in terminals that only draw pictures with **sixel, as foot does**: Claude Code draws pictures with the kitty protocol and iTerm2's, never with sixel, and a mod cannot write to the terminal itself.
+
+On Omarchy or another Hyprland desktop with foot, install Tk (`sudo pacman -S tk` on Arch) to get the window.
+
 ## In a window, by the pointer
 
 Where the terminal cannot draw a picture itself (Warp, iTerm2, Terminal.app, VS Code), the preview is a small borderless window outside the terminal: above the pointer and to its right, under it or to its left where the screen has no room, never over the pointer. It never takes the focus or the pointer, so you keep typing and hovering in the terminal, and it stands over every window, full-screen ones too. It shows in about a third of a second.
